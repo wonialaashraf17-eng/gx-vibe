@@ -1,0 +1,9 @@
+{
+  "name": "GX Vibe",
+  "short_name": "GX Vibe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0b14",
+  "theme_color": "#101020",
+  "description": "Watch, create and share videos with GX Vibe."
+}
