@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101020">
+  <meta name="description" content="GX Vibe — watch, create and share videos.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/styles.css">
+  <title>GX Vibe</title>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">GX <span>Vibe</span></a>
+    <div class="top-actions">
+      <button class="ghost" id="openSearch" aria-label="Search">⌕</button>
+      <button class="primary small" id="openAuth">Sign in</button>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="Main navigation">
+    <button class="tab active" data-view="home">For You</button>
+    <button class="tab" data-view="watch">GX Watch</button>
+    <button class="tab" data-view="studio">AI Studio</button>
+    <button class="tab" data-view="upload">Upload</button>
+  </nav>
+  <main>
+    <section id="homeView" class="view">
+      <div class="welcome">
+        <p class="eyebrow">YOUR VIDEO COMMUNITY</p>
+        <h1>Discover your next <span>favourite</span>.</h1>
+        <p class="muted">Short clips, full-length videos and creative ideas — all in one place.</p>
+      </div>
+      <div id="videoFeed" class="video-grid">
+        <div class="empty"><div class="empty-icon">▶</div><h3>No videos yet</h3><p>Sign in and upload the first GX Vibe video.</p></div>
+      </div>
+    </section>
+    <section id="watchView" class="view hidden">
+      <div class="section-heading"><p class="eyebrow">GX WATCH</p><h1>Videos of every length.</h1><p class="muted">Watch short clips, lessons, documentaries and extended videos.</p></div>
+      <div id="watchFeed" class="video-grid"></div>
+    </section>
+    <section id="studioView" class="view hidden">
+      <div class="section-heading"><p class="eyebrow">CREATE SOMETHING ORIGINAL</p><h1>GX <span>Creative Studio</span></h1><p class="muted">Your creative workspace. AI tools will be connected in a later development stage.</p></div>
+      <div class="tool-grid">
+        <article class="tool-card"><div class="tool-icon">✦</div><h3>AI Camera</h3><p>Smart camera effects and photo enhancement.</p><span class="status">Planned</span></article>
+        <article class="tool-card"><div class="tool-icon">◈</div><h3>AI Assistant</h3><p>Ideas, captions, translations and creator help.</p><span class="status">Planned</span></article>
+        <article class="tool-card"><div class="tool-icon">▶</div><h3>AI Video Maker</h3><p>Turn creative prompts into video concepts.</p><span class="status">Planned</span></article>
+        <article class="tool-card"><div class="tool-icon">▧</div><h3>AI Photo Studio</h3><p>Enhance, transform and edit images.</p><span class="status">Planned</span></article>
+        <article class="tool-card"><div class="tool-icon">♫</div><h3>AI Voice Studio</h3><p>Create narration and voiceovers.</p><span class="status">Planned</span></article>
+        <article class="tool-card"><div class="tool-icon">✧</div><h3>AI Effects</h3><p>Creative filters and visual effects.</p><span class="status">Planned</span></article>
+      </div>
+      <div class="notice">AI generation is not active in this starter. Provider keys must be added securely on the backend before enabling it.</div>
+    </section>
+    <section id="uploadView" class="view hidden">
+      <div class="section-heading"><p class="eyebrow">SHARE YOUR WORK</p><h1>Upload a video</h1><p class="muted">GX Vibe is designed for all video lengths. Actual uploads are subject to configured file-size and storage limits.</p></div>
+      <form id="uploadForm" class="panel">
+        <label>Video title<input name="title" maxlength="120" required placeholder="Give your video a title"></label>
+        <label>Description<textarea name="description" maxlength="500" rows="3" placeholder="Tell viewers about your video"></textarea></label>
+        <label class="file-label">Choose video file<input name="video" type="file" accept="video/mp4,video/webm,video/quicktime" required></label>
+        <p class="hint">Supported starter formats: MP4, WebM and MOV. Upload limit is configured by the server.</p>
+        <button class="primary" type="submit">Upload video</button>
+        <p id="uploadMessage" class="message" role="status"></p>
+      </form>
+    </section>
+  </main>
+  <footer><span>GX Vibe</span><span>Make it. Share it. Vibe.</span></footer>
+
+  <dialog id="authDialog">
+    <form id="authForm" class="dialog-card">
+      <button type="button" class="close" id="closeAuth" aria-label="Close">×</button>
+      <p class="eyebrow">WELCOME TO GX VIBE</p><h2 id="authTitle">Create your account</h2>
+      <div id="registerFields">
+        <label>Display name<input name="displayName" maxlength="60" placeholder="Your display name"></label>
+        <label>Username<input name="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" placeholder="your_username"></label>
+        <label>Email<input name="email" type="email" placeholder="you@example.com"></label>
+      </div>
+      <label id="loginLabel" class="hidden">Username or email<input name="login" autocomplete="username"></label>
+      <label>Password<input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="At least 10 characters"></label>
+      <button class="primary full" type="submit" id="authSubmit">Create account</button>
+      <button class="text-button" type="button" id="toggleAuth">Already have an account? Sign in</button>
+      <p id="authMessage" class="message" role="status"></p>
+    </form>
+  </dialog>
+  <script src="/app.js" defer></script>
+</body>
+</html>
