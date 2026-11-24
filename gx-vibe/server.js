@@ -5,11 +5,17 @@ const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
 const { Pool } = require("pg");
-
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
+});
 const app = express();
 const port = process.env.PORT || 3000;
 const secret = process.env.JWT_SECRET;
