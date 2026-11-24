@@ -48,17 +48,14 @@ app.use("/uploads", express.static(uploadDir, { maxAge: "1h" }));app.get("/api/h
 
 const allowedTypes = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 const maxUploadBytes = Math.max(1, Number(process.env.MAX_UPLOAD_MB || 250)) * 1024 * 1024;
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase().slice(0, 10);
-    cb(null, crypto.randomUUID() + ext);
-  }
-});
 const upload = multer({
-  storage,
-  limits: { fileSize: maxUploadBytes, files: 1 },
-  fileFilter: (_req, file, cb) => cb(null, allowedTypes.has(file.mimetype))
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: maxUploadBytes,
+    files: 1
+  },
+  fileFilter: (_req, file, cb) =>
+    cb(null, allowedTypes.has(file.mimetype))
 });
 
 function makeToken(user) {
@@ -151,31 +148,77 @@ app.get("/api/videos", async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: "Could not load videos." }); }
 });
 
+
 app.post("/api/videos", auth, (req, res, next) => {
   upload.single("video")(req, res, (err) => {
-    if (err) return res.status(400).json({ error: err.code === "LIMIT_FILE_SIZE" ? "Video exceeds the configured upload size." : "Upload failed. Use MP4, WebM or MOV." });
+    if (err) {
+      return res.status(400).json({
+        error: err.code === "LIMIT_FILE_SIZE"
+          ? "Video exceeds the configured upload size."
+          : "Upload failed. Use MP4, WebM or MOV."
+      });
+    }
     next();
   });
 }, async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "Choose a supported video file." });
+  if (!req.file) {
+    return res.status(400).json({
+      error: "Choose a supported video file."
+    });
+  }
+
   try {
     const title = cleanText(req.body.title, 120);
     const description = cleanText(req.body.description, 500);
+
     if (!title) {
-      fs.unlinkSync(req.file.path);
-      return res.status(400).json({ error: "Add a video title." });
+      return res.status(400).json({
+        error: "Add a video title."
+      });
     }
-    const url = "/uploads/" + path.basename(req.file.filename);
+
+    const cloudResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: "video",
+          folder: "gx-vibe/videos"
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+
+      stream.end(req.file.buffer);
+    });
+
+    const url = cloudResult.secure_url;
+
     const result = await pool.query(
-      `INSERT INTO videos(user_id,title,description,storage_url,original_filename,mime_type,size_bytes)
-       VALUES($1,$2,$3,$4,$5,$6,$7)
-       RETURNING id,title,description,storage_url,mime_type,size_bytes,created_at`,
-      [req.user.id, title, description, url, req.file.originalname, req.file.mimetype, req.file.size]
+      `INSERT INTO videos
+      (user_id,title,description,storage_url,
+       original_filename,mime_type,size_bytes)
+      VALUES($1,$2,$3,$4,$5,$6,$7)
+      RETURNING id,title,description,storage_url,
+      mime_type,size_bytes,created_at`,
+      [
+        req.user.id,
+        title,
+        description,
+        url,
+        req.file.originalname,
+        req.file.mimetype,
+        req.file.size
+      ]
     );
+
     res.status(201).json({ video: result.rows[0] });
+
   } catch (e) {
-    fs.unlink(req.file.path, () => {});
-    console.error(e); res.status(500).json({ error: "Could not save video details." });
+    console.error(e);
+    res.status(500).json({
+      error: "Could not upload or save video."
+    });
   }
 });
 
