@@ -16,45 +16,67 @@ function videoCard(v) {
 
   const video = document.createElement("video");
   video.controls = true;
-  video.preload = "auto";
+  video.preload = "metadata";
   video.playsInline = true;
+  video.setAttribute("playsinline", "");
   video.style.width = "100%";
-  video.style.background = "#050509";
 
   const debug = document.createElement("p");
   debug.style.padding = "10px";
   debug.style.color = "white";
   debug.textContent = "Loading video...";
 
-  video.addEventListener("loadedmetadata", () => {
-    debug.textContent =
-      "Video loaded. Duration: " +
-      Math.round(video.duration) + " seconds";
-  });
-
-  video.addEventListener("canplay", () => {
-    debug.textContent = "Video is ready to play.";
-  });
-
-  video.addEventListener("error", () => {
-    const err = video.error;
-    debug.textContent = "Playback error code: " +
-      (err ? err.code : "unknown") +
-      " | " +
-      (err ? err.message : "No details");
-  });
-
-  video.src = v.storage_url;
-  video.load();
-
   const info = document.createElement("div");
   info.className = "video-info";
 
   const title = document.createElement("h3");
-  title.textContent = v.title;
+  title.textContent = v.title || "";
 
   const by = document.createElement("p");
-  by.textContent = `${v.display_name} · @${v.username}`;
+  by.textContent = `${v.display_name || ""} · @${v.username || ""}`;
+
+  video.addEventListener("loadedmetadata", () => {
+    debug.textContent = "Video metadata loaded.";
+  });
+
+  video.addEventListener("canplay", () => {
+    debug.textContent = "Video ready to play.";
+  });
+
+  video.addEventListener("error", () => {
+    debug.textContent =
+      "Playback error: " +
+      (video.error ? video.error.code : "unknown") +
+      " — " +
+      (video.error ? video.error.message : "No details");
+  });
+
+  try {
+    const url = new URL(v.storage_url, location.origin);
+
+    if (
+      url.protocol !== "https:" &&
+      url.origin !== location.origin
+    ) {
+      throw new Error("Unsupported video URL.");
+    }
+
+    if (
+      url.hostname !== "res.cloudinary.com" &&
+      url.origin !== location.origin
+    ) {
+      throw new Error("Video host is not allowed.");
+    }
+
+    const source = document.createElement("source");
+    source.src = url.href;
+    source.type = v.mime_type || "video/mp4";
+
+    video.appendChild(source);
+    video.load();
+  } catch (e) {
+    debug.textContent = e.message;
+  }
 
   info.append(title, by);
   card.append(video, debug, info);
