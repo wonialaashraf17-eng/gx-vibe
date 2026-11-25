@@ -1,9 +1,9 @@
 const CACHE = "gx-vibe-v2";
 
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE).then(cache =>
-      cache.addAll([
+self.addEventListener("install", e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c =>
+      c.addAll([
         "/",
         "/styles.css",
         "/app.js",
@@ -15,47 +15,30 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", event => {
-  event.waitUntil(
+self.addEventListener("activate", e => {
+  e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys
-          .filter(key => key !== CACHE)
-          .map(key => caches.delete(key))
+        keys.filter(k => k !== CACHE)
+          .map(k => caches.delete(k))
       )
-    ).then(() => self.clients.claim())
+    )
   );
+
+  self.clients.claim();
 });
 
-self.addEventListener("fetch", event => {
-  const request = event.request;
+self.addEventListener("fetch", e => {
+  if (e.request.method !== "GET") return;
 
-  if (request.method !== "GET") return;
+  const url = new URL(e.request.url);
 
-  // Let video playback requests bypass the service worker.
-  if (
-    request.destination === "video" ||
-    request.headers.has("range")
-  ) {
-    return;
-  }
+  // Never intercept external video requests.
+  if (url.origin !== self.location.origin) return;
 
-  // Only cache our own website's requests.
-  if (new URL(request.url).origin !== self.location.origin) {
-    return;
-  }
-
-  event.respondWith(
-    fetch(request)
-      .then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE).then(cache =>
-            cache.put(request, copy)
-          );
-        }
-        return response;
-      })
-      .catch(() => caches.match(request))
+  e.respondWith(
+    fetch(e.request).catch(() =>
+      caches.match(e.request)
+    )
   );
 });
