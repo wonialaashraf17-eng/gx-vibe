@@ -18,12 +18,30 @@ function videoCard(v) {
   video.controls = true;
   video.preload = "auto";
   video.playsInline = true;
-  video.setAttribute("playsinline", "");
-  video.setAttribute("controls", "");
+  video.style.width = "100%";
+  video.style.background = "#050509";
+
+  const debug = document.createElement("p");
+  debug.style.padding = "10px";
+  debug.style.color = "white";
+  debug.textContent = "Loading video...";
+
+  video.addEventListener("loadedmetadata", () => {
+    debug.textContent =
+      "Video loaded. Duration: " +
+      Math.round(video.duration) + " seconds";
+  });
+
+  video.addEventListener("canplay", () => {
+    debug.textContent = "Video is ready to play.";
+  });
 
   video.addEventListener("error", () => {
-    console.error("GX Vibe playback error:", video.error);
-    console.error("Video URL:", v.storage_url);
+    const err = video.error;
+    debug.textContent = "Playback error code: " +
+      (err ? err.code : "unknown") +
+      " | " +
+      (err ? err.message : "No details");
   });
 
   video.src = v.storage_url;
@@ -39,7 +57,7 @@ function videoCard(v) {
   by.textContent = `${v.display_name} · @${v.username}`;
 
   info.append(title, by);
-  card.append(video, info);
+  card.append(video, debug, info);
 
   return card;
 }
