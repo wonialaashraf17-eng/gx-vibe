@@ -35,7 +35,15 @@ const pool = new Pool({
 const uploadDir = path.join(__dirname, "uploads");
 fs.mkdirSync(uploadDir, { recursive: true });
 
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      mediaSrc: ["'self'", "https://res.cloudinary.com", "blob:"]
+    }
+  }
+}));
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
