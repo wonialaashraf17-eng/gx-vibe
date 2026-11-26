@@ -105,7 +105,7 @@ app.get("/api/health", async (_req, res) => {
   catch { res.status(503).json({ ok: false, error: "Database unavailable" }); }
 });
 
-app.post("/api/auth/register", async (req, res) => {
+app.post("/api/auth/register", registerLimiter, async (req, res) => {
   try {
 const registerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
