@@ -107,6 +107,15 @@ app.get("/api/health", async (_req, res) => {
 
 app.post("/api/auth/register", async (req, res) => {
   try {
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many registration attempts. Please try again later."
+  }
+});
     const username = cleanText(req.body.username, 24).toLowerCase();
     const email = cleanText(req.body.email, 255).toLowerCase();
     const displayName = cleanText(req.body.displayName || username, 60);
