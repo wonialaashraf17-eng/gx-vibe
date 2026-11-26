@@ -7,7 +7,6 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const path = require("path");
-const fs = require("fs");
 const crypto = require("crypto");
 const { Pool } = require("pg");
 cloudinary.config({
@@ -32,8 +31,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
 });
-const uploadDir = path.join(__dirname, "uploads");
-fs.mkdirSync(uploadDir, { recursive: true });
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -47,7 +44,7 @@ app.use(helmet({
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(uploadDir, { maxAge: "1h" }));app.get("/api/health", (_req, res) => {
+app.get("/api/health", (_req, res) => {
   res.status(200).json({
     ok: true,
     message: "GX Vibe server is running"
