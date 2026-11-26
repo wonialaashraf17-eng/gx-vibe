@@ -127,7 +127,7 @@ app.post("/api/auth/register", async (req, res) => {
   }
 });
 
-app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", loginLimiter, async (req, res) => {
   try {
     const login = cleanText(req.body.login, 255).toLowerCase();
     const result = await pool.query(
