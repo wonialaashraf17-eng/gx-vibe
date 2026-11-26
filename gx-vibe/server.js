@@ -183,6 +183,37 @@ app.post("/api/videos", auth, (req, res, next) => {
     }
     next();
   });
+app.post("/api/videos/:id/like", auth, async (req, res) => {
+  try {
+    const videoId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(videoId) || videoId < 1) {
+      return res.status(400).json({ error: "Invalid video." });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO video_likes (user_id, video_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, video_id) DO NOTHING
+       RETURNING id`,
+      [req.user.id, videoId]
+    );
+
+    if (result.rowCount) {
+      return res.json({ liked: true });
+    }
+
+    await pool.query(
+      "DELETE FROM video_likes WHERE user_id=$1 AND video_id=$2",
+      [req.user.id, videoId]
+    );
+
+    res.json({ liked: false });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not update like." });
+  }
+});
 }, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({
