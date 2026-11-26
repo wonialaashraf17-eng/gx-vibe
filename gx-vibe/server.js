@@ -107,6 +107,7 @@ app.get("/api/health", async (_req, res) => {
 
 app.post("/api/auth/register", registerLimiter, async (req, res) => {
   try {
+const username = cleanText(req.body.username, 24).toLowerCase();
 const registerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
