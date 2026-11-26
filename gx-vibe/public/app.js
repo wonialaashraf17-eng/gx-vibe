@@ -78,7 +78,27 @@ function videoCard(v) {
     debug.textContent = e.message;
   }
 
-  info.append(title, by);
+  const likeButton = document.createElement("button");
+likeButton.textContent = "♡ Like";
+likeButton.type = "button";
+
+likeButton.addEventListener("click", async () => {
+  likeButton.disabled = true;
+
+  try {
+    const result = await api(`/api/videos/${v.id}/like`, {
+      method: "POST"
+    });
+
+    likeButton.textContent = result.liked ? "♥ Liked" : "♡ Like";
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    likeButton.disabled = false;
+  }
+});
+
+info.append(title, by, likeButton);
   card.append(video, debug, info);
 
   return card;
