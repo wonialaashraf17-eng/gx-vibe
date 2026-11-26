@@ -91,10 +91,16 @@ async function auth(req, res, next) {
 function cleanText(value, max) {
   return String(value || "").trim().slice(0, max);
 }
-app.get("/api/health", async (_req, res) => {
-  try { await pool.query("SELECT 1"); res.json({ ok: true, service: "GX Vibe" }); }
-  catch { res.status(503).json({ ok: false, error: "Database unavailable" }); }
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many login attempts. Please try again later."
+  }
 });
+
 const registerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
@@ -104,7 +110,10 @@ const registerLimiter = rateLimit({
     error: "Too many registration attempts. Please try again later."
   }
 });
-
+app.get("/api/health", async (_req, res) => {
+  try { await pool.query("SELECT 1"); res.json({ ok: true, service: "GX Vibe" }); }
+  catch { res.status(503).json({ ok: false, error: "Database unavailable" }); }
+});
 app.post("/api/auth/register", registerLimiter, async (req, res) => {
   try {
     const username = cleanText(req.body.username, 24).toLowerCase();
