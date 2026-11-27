@@ -8,7 +8,22 @@ $("#openAuth").addEventListener("click",()=>dialog.showModal());
 $("#closeAuth").addEventListener("click",()=>dialog.close());
 function setAuthMode(mode){authMode=mode;$("#authTitle").textContent=mode==="register"?"Create your account":"Welcome back";$("#registerFields").classList.toggle("hidden",mode==="login");$("#loginLabel").classList.toggle("hidden",mode!=="login");$("#authSubmit").textContent=mode==="register"?"Create account":"Sign in";$("#toggleAuth").textContent=mode==="register"?"Already have an account? Sign in":"Need an account? Register";}
 $("#toggleAuth").addEventListener("click",()=>setAuthMode(authMode==="register"?"login":"register"));
-async function api(url,options={}){const r=await fetch(url,{credentials:"same-origin",...options});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Request failed");return data;}
+async function api(url, options = {}) {
+  const r = await fetch(url, {
+    credentials: "same-origin",
+    ...options
+  });
+
+  const data = await r.json().catch(() => ({}));
+
+  if (!r.ok) {
+    throw new Error(
+      `HTTP ${r.status}: ${data.error || "Request failed"}`
+    );
+  }
+
+  return data;
+}const r=await fetch(url,{credentials:"same-origin",...options});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Request failed");return data;}
 $("#authForm").addEventListener("submit",async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const body=Object.fromEntries(f.entries());const endpoint=authMode==="register"?"/api/auth/register":"/api/auth/login";$("#authMessage").textContent="Please wait…";try{await api(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});$("#authMessage").textContent="Signed in successfully.";$("#openAuth").textContent="Account";setTimeout(()=>dialog.close(),500);}catch(err){$("#authMessage").textContent=err.message;}});
 function videoCard(v) {
   const card = document.createElement("article");
