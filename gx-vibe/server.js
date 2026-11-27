@@ -17,6 +17,7 @@ cloudinary.config({
   secure: true
 });
 const app = express();
+app.set("trust proxy", 1);
 const port = process.env.PORT || 3000;
 const secret = process.env.JWT_SECRET;
 if (!secret || secret.length < 32) {
