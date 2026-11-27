@@ -185,7 +185,13 @@ console.log("LIKE ROUTE REACHED", req.params.id, req.user?.id);
     }
     next();
   });
-app.post("/api/videos/:id/like", auth, async (req, res) => {
+app.post("/api/videos/:id/like",
+  (req, res, next) => {
+    console.log("LIKE REQUEST RECEIVED", req.params.id);
+    next();
+  },
+  auth,
+  async (req, res) => {
   try {
     const videoId = Number(req.params.id);
 
