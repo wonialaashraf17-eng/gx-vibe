@@ -174,6 +174,7 @@ app.get("/api/videos", async (req, res) => {
 
 app.post("/api/videos", auth, (req, res, next) => {
   upload.single("video")(req, res, (err) => {
+console.log("LIKE ROUTE REACHED", req.params.id, req.user?.id);
     if (err) {
       return res.status(400).json({
         error: err.code === "LIMIT_FILE_SIZE"
