@@ -162,14 +162,39 @@ app.get("/api/me", auth, (req, res) => res.json({ user: req.user }));
 app.get("/api/videos", async (req, res) => {
   try {
     const limit = Math.min(30, Math.max(1, Number(req.query.limit) || 20));
+
     const result = await pool.query(
-      `SELECT v.id,v.title,v.description,v.storage_url,v.mime_type,v.size_bytes,v.created_at,
-              u.username,u.display_name
-       FROM videos v JOIN users u ON u.id=v.user_id
-       ORDER BY v.created_at DESC LIMIT $1`, [limit]
+      `SELECT
+          v.id,
+          v.title,
+          v.description,
+          v.storage_url,
+          v.mime_type,
+          v.size_bytes,
+          v.created_at,
+          u.username,
+          u.display_name,
+          (SELECT COUNT(*)
+           FROM video_likes vl
+           WHERE vl.video_id = v.id) AS like_count,
+          EXISTS (
+            SELECT 1
+            FROM video_likes vl
+            WHERE vl.video_id = v.id
+              AND vl.user_id = $2
+          ) AS liked
+       FROM videos v
+       JOIN users u ON u.id = v.user_id
+       ORDER BY v.created_at DESC
+       LIMIT $1`,
+      [limit, req.user?.id || null]
     );
+
     res.json({ videos: result.rows });
-  } catch (e) { console.error(e); res.status(500).json({ error: "Could not load videos." }); }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not load videos." });
+  }
 });
 app.post("/api/videos/:id/like",
   (req, res, next) => {
