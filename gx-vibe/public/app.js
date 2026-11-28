@@ -199,39 +199,60 @@ async function loadComments() {
     });
 
     item.appendChild(deleteButton);
+  } else {
+    const reportSelect = document.createElement("select");
+
+    const reasons = [
+      "Select a reason",
+      "Spam",
+      "Harassment or bullying",
+      "Inappropriate content",
+      "Other"
+    ];
+
+    reasons.forEach((reason) => {
+      const option = document.createElement("option");
+      option.value = reason;
+      option.textContent = reason;
+      reportSelect.appendChild(option);
+    });
+
+    const reportButton = document.createElement("button");
+    reportButton.type = "button";
+    reportButton.textContent = "Report";
+
+    reportButton.addEventListener("click", async () => {
+      const reason = reportSelect.value;
+
+      if (reason === "Select a reason") {
+        alert("Please select a report reason.");
+        return;
+      }
+
+      reportButton.disabled = true;
+
+      try {
+        await api(`/api/comments/${c.id}/report`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ reason })
+        });
+
+        alert("Comment reported successfully.");
+        reportSelect.disabled = true;
+        reportButton.textContent = "Reported";
+      } catch (e) {
+        alert(e.message);
+        reportButton.disabled = false;
+      }
+    });
+
+    item.append(reportSelect, reportButton);
   }
 
   commentsList.appendChild(item);
-});
-  } catch (e) {
-    commentsList.textContent = "Could not load comments.";
-  }
-}
-
-commentForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const content = commentInput.value.trim();
-  if (!content) return;
-
-  commentButton.disabled = true;
-
-  try {
-    await api(`/api/videos/${v.id}/comments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ content })
-    });
-
-    commentInput.value = "";
-    await loadComments();
-  } catch (e) {
-    alert(e.message);
-  } finally {
-    commentButton.disabled = false;
-  }
 });
 
 commentsSection.append(
