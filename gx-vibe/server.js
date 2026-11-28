@@ -336,6 +336,56 @@ app.delete("/api/comments/:commentId", auth, async (req, res) => {
     res.status(500).json({ error: "Could not delete comment." });
   }
 });
+app.post("/api/comments/:commentId/report", auth, async (req, res) => {
+  try {
+    const commentId = Number(req.params.commentId);
+
+    if (!Number.isSafeInteger(commentId) || commentId < 1) {
+      return res.status(400).json({ error: "Invalid comment." });
+    }
+
+    const reason = cleanText(req.body.reason, 100);
+
+    const allowedReasons = [
+      "Spam",
+      "Harassment or bullying",
+      "Inappropriate content",
+      "Other"
+    ];
+
+    if (!allowedReasons.includes(reason)) {
+      return res.status(400).json({ error: "Invalid report reason." });
+    }
+
+    const comment = await pool.query(
+      "SELECT id FROM comments WHERE id=$1",
+      [commentId]
+    );
+
+    if (!comment.rowCount) {
+      return res.status(404).json({ error: "Comment not found." });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO comment_reports (comment_id, reporter_id, reason)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (comment_id, reporter_id) DO NOTHING
+       RETURNING id`,
+      [commentId, req.user.id, reason]
+    );
+
+    if (!result.rowCount) {
+      return res.status(409).json({
+        error: "You have already reported this comment."
+      });
+    }
+
+    res.status(201).json({ reported: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not report comment." });
+  }
+});
 app.post("/api/videos/:id/like",
   (req, res, next) => {
     console.log("LIKE REQUEST RECEIVED", req.params.id);
