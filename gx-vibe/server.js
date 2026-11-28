@@ -76,6 +76,34 @@ function setAuthCookie(res, token) {
 }
 async function auth(req, res, next) {
   try {
+    const token = req.cookies.gxv_session;
+
+    if (!token) {
+      return res.status(401).json({ error: "Please sign in." });
+    }
+
+    const payload = jwt.verify(token, secret);
+
+    const result = await pool.query(
+      "SELECT id, username, display_name, bio, is_admin FROM users WHERE id=$1",
+      [payload.sub]
+    );
+
+    if (!result.rowCount) {
+      return res.status(401).json({
+        error: "Session is no longer valid."
+      });
+    }
+
+    req.user = result.rows[0];
+    next();
+  } catch {
+    return res.status(401).json({
+      error: "Please sign in again."
+    });
+  }
+}
+
 async function optionalAuth(req, res, next) {
   try {
     const token = req.cookies.gxv_session;
@@ -88,7 +116,7 @@ async function optionalAuth(req, res, next) {
     const payload = jwt.verify(token, secret);
 
     const result = await pool.query(
-      "SELECT id, username, display_name FROM users WHERE id=$1",
+      "SELECT id, username, display_name, is_admin FROM users WHERE id=$1",
       [payload.sub]
     );
 
