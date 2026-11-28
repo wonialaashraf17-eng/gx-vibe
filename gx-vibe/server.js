@@ -171,7 +171,44 @@ app.get("/api/videos", async (req, res) => {
     res.json({ videos: result.rows });
   } catch (e) { console.error(e); res.status(500).json({ error: "Could not load videos." }); }
 });
+app.post("/api/videos/:id/like",
+  (req, res, next) => {
+    console.log("LIKE REQUEST RECEIVED", req.params.id);
+    next();
+  },
+  auth,
+  async (req, res) => {
+    try {
+      const videoId = Number(req.params.id);
 
+      if (!Number.isSafeInteger(videoId) || videoId < 1) {
+        return res.status(400).json({ error: "Invalid video." });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO video_likes (user_id, video_id)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id, video_id) DO NOTHING
+         RETURNING id`,
+        [req.user.id, videoId]
+      );
+
+      if (result.rowCount) {
+        return res.json({ liked: true });
+      }
+
+      await pool.query(
+        "DELETE FROM video_likes WHERE user_id=$1 AND video_id=$2",
+        [req.user.id, videoId]
+      );
+
+      res.json({ liked: false });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Could not update like." });
+    }
+  }
+);
 
 app.post("/api/videos", auth, (req, res, next) => {
   upload.single("video")(req, res, (err) => {
@@ -185,43 +222,6 @@ console.log("LIKE ROUTE REACHED", req.params.id, req.user?.id);
     }
     next();
   });
-app.post("/api/videos/:id/like",
-  (req, res, next) => {
-    console.log("LIKE REQUEST RECEIVED", req.params.id);
-    next();
-  },
-  auth,
-  async (req, res) => {
-  try {
-    const videoId = Number(req.params.id);
-
-    if (!Number.isSafeInteger(videoId) || videoId < 1) {
-      return res.status(400).json({ error: "Invalid video." });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO video_likes (user_id, video_id)
-       VALUES ($1, $2)
-       ON CONFLICT (user_id, video_id) DO NOTHING
-       RETURNING id`,
-      [req.user.id, videoId]
-    );
-
-    if (result.rowCount) {
-      return res.json({ liked: true });
-    }
-
-    await pool.query(
-      "DELETE FROM video_likes WHERE user_id=$1 AND video_id=$2",
-      [req.user.id, videoId]
-    );
-
-    res.json({ liked: false });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Could not update like." });
-  }
-});
 }, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({
