@@ -423,6 +423,36 @@ app.post("/api/comments/:commentId/report", auth, async (req, res) => {
     res.status(500).json({ error: "Could not report comment." });
   }
 });
+app.get("/api/admin/comment-reports", auth, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT
+          cr.id AS report_id,
+          cr.reason,
+          cr.status,
+          cr.created_at AS report_created_at,
+          cr.reviewed_at,
+          c.id AS comment_id,
+          c.content AS comment_content,
+          c.created_at AS comment_created_at,
+          comment_user.username AS comment_author,
+          reporter.username AS reporter_username
+       FROM comment_reports cr
+       JOIN comments c ON c.id = cr.comment_id
+       JOIN users comment_user ON comment_user.id = c.user_id
+       JOIN users reporter ON reporter.id = cr.reporter_id
+       ORDER BY cr.created_at DESC
+       LIMIT 100`
+    );
+
+    res.json({ reports: result.rows });
+  } catch (e) {
+    console.error("Admin reports error:", e);
+    res.status(500).json({
+      error: "Could not load moderation reports."
+    });
+  }
+});
 app.post("/api/videos/:id/like",
   (req, res, next) => {
     console.log("LIKE REQUEST RECEIVED", req.params.id);
