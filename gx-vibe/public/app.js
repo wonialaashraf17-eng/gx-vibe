@@ -164,19 +164,45 @@ async function loadComments() {
     }
 
     data.comments.forEach((c) => {
-      const item = document.createElement("div");
-      item.className = "comment-item";
+  const item = document.createElement("div");
+  item.className = "comment-item";
 
-      const name = document.createElement("strong");
-      name.textContent =
-        c.display_name || c.username || "User";
+  const name = document.createElement("strong");
+  name.textContent =
+    c.display_name || c.username || "User";
 
-      const text = document.createElement("p");
-      text.textContent = c.content;
+  const text = document.createElement("p");
+  text.textContent = c.content;
 
-      item.append(name, text);
-      commentsList.appendChild(item);
+  item.append(name, text);
+
+  if (c.is_mine) {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+
+    deleteButton.addEventListener("click", async () => {
+      if (!confirm("Delete this comment?")) return;
+
+      deleteButton.disabled = true;
+
+      try {
+        await api(`/api/comments/${c.id}`, {
+          method: "DELETE"
+        });
+
+        await loadComments();
+      } catch (e) {
+        alert(e.message);
+        deleteButton.disabled = false;
+      }
     });
+
+    item.appendChild(deleteButton);
+  }
+
+  commentsList.appendChild(item);
+});
   } catch (e) {
     commentsList.textContent = "Could not load comments.";
   }
