@@ -242,6 +242,71 @@ app.get("/api/videos", optionalAuth, async (req, res) => {
     res.status(500).json({ error: "Could not load videos." });
   }
 });
+app.get("/api/videos/:id/comments", async (req, res) => {
+  try {
+    const videoId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(videoId) || videoId < 1) {
+      return res.status(400).json({ error: "Invalid video." });
+    }
+
+    const result = await pool.query(
+      `SELECT
+          c.id,
+          c.content,
+          c.created_at,
+          u.username,
+          u.display_name
+       FROM comments c
+       JOIN users u ON u.id = c.user_id
+       WHERE c.video_id = $1
+       ORDER BY c.created_at ASC
+       LIMIT 100`,
+      [videoId]
+    );
+
+    res.json({ comments: result.rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not load comments." });
+  }
+});
+
+app.post("/api/videos/:id/comments", auth, async (req, res) => {
+  try {
+    const videoId = Number(req.params.id);
+    const content = cleanText(req.body.content, 1000);
+
+    if (!Number.isSafeInteger(videoId) || videoId < 1) {
+      return res.status(400).json({ error: "Invalid video." });
+    }
+
+    if (!content) {
+      return res.status(400).json({ error: "Comment cannot be empty." });
+    }
+
+    const video = await pool.query(
+      "SELECT id FROM videos WHERE id=$1",
+      [videoId]
+    );
+
+    if (!video.rowCount) {
+      return res.status(404).json({ error: "Video not found." });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO comments (user_id, video_id, content)
+       VALUES ($1, $2, $3)
+       RETURNING id, content, created_at`,
+      [req.user.id, videoId, content]
+    );
+
+    res.status(201).json({ comment: result.rows[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not post comment." });
+  }
+});
 app.post("/api/videos/:id/like",
   (req, res, next) => {
     console.log("LIKE REQUEST RECEIVED", req.params.id);
