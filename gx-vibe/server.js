@@ -307,6 +307,33 @@ app.post("/api/videos/:id/comments", auth, async (req, res) => {
     res.status(500).json({ error: "Could not post comment." });
   }
 });
+app.delete("/api/comments/:commentId", auth, async (req, res) => {
+  try {
+    const commentId = Number(req.params.commentId);
+
+    if (!Number.isSafeInteger(commentId) || commentId < 1) {
+      return res.status(400).json({ error: "Invalid comment." });
+    }
+
+    const result = await pool.query(
+      `DELETE FROM comments
+       WHERE id = $1 AND user_id = $2
+       RETURNING id`,
+      [commentId, req.user.id]
+    );
+
+    if (!result.rowCount) {
+      return res.status(404).json({
+        error: "Comment not found or you cannot delete it."
+      });
+    }
+
+    res.json({ deleted: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Could not delete comment." });
+  }
+});
 app.post("/api/videos/:id/like",
   (req, res, next) => {
     console.log("LIKE REQUEST RECEIVED", req.params.id);
