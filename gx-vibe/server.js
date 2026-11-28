@@ -242,7 +242,7 @@ app.get("/api/videos", optionalAuth, async (req, res) => {
     res.status(500).json({ error: "Could not load videos." });
   }
 });
-app.get("/api/videos/:id/comments", async (req, res) => {
+app.get("/api/videos/:id/comments", optionalAuth, async (req, res) => {
   try {
     const videoId = Number(req.params.id);
 
@@ -253,16 +253,18 @@ app.get("/api/videos/:id/comments", async (req, res) => {
     const result = await pool.query(
       `SELECT
           c.id,
+          c.user_id,
           c.content,
           c.created_at,
           u.username,
-          u.display_name
+          u.display_name,
+          (c.user_id = $2) AS is_mine
        FROM comments c
        JOIN users u ON u.id = c.user_id
        WHERE c.video_id = $1
        ORDER BY c.created_at ASC
        LIMIT 100`,
-      [videoId]
+      [videoId, req.user?.id || null]
     );
 
     res.json({ comments: result.rows });
