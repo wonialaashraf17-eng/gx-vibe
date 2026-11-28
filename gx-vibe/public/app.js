@@ -128,7 +128,95 @@ likeButton.addEventListener("click", async () => {
   }
 });
 
-info.append(title, by, likeButton);
+const commentsSection = document.createElement("section");
+commentsSection.className = "comments-section";
+
+const commentsTitle = document.createElement("h4");
+commentsTitle.textContent = "Comments";
+
+const commentsList = document.createElement("div");
+commentsList.className = "comments-list";
+
+const commentInput = document.createElement("input");
+commentInput.type = "text";
+commentInput.placeholder = "Write a comment...";
+commentInput.maxLength = 1000;
+
+const commentForm = document.createElement("form");
+
+const commentButton = document.createElement("button");
+commentButton.type = "submit";
+commentButton.textContent = "Post";
+
+commentForm.append(commentInput, commentButton);
+
+async function loadComments() {
+  commentsList.textContent = "Loading comments...";
+
+  try {
+    const data = await api(`/api/videos/${v.id}/comments`);
+
+    commentsList.replaceChildren();
+
+    if (!data.comments.length) {
+      commentsList.textContent = "No comments yet.";
+      return;
+    }
+
+    data.comments.forEach((c) => {
+      const item = document.createElement("div");
+      item.className = "comment-item";
+
+      const name = document.createElement("strong");
+      name.textContent =
+        c.display_name || c.username || "User";
+
+      const text = document.createElement("p");
+      text.textContent = c.content;
+
+      item.append(name, text);
+      commentsList.appendChild(item);
+    });
+  } catch (e) {
+    commentsList.textContent = "Could not load comments.";
+  }
+}
+
+commentForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const content = commentInput.value.trim();
+  if (!content) return;
+
+  commentButton.disabled = true;
+
+  try {
+    await api(`/api/videos/${v.id}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ content })
+    });
+
+    commentInput.value = "";
+    await loadComments();
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    commentButton.disabled = false;
+  }
+});
+
+commentsSection.append(
+  commentsTitle,
+  commentsList,
+  commentForm
+);
+
+loadComments();
+
+info.append(title, by, likeButton, commentsSection);
 card.append(video, debug, info);
 
 return card;
