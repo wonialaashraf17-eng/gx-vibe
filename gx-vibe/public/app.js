@@ -95,8 +95,17 @@ function videoCard(v) {
   }
 
   const likeButton = document.createElement("button");
-likeButton.textContent = "♡ Like";
 likeButton.type = "button";
+
+let liked = Boolean(v.liked);
+let likeCount = Number(v.like_count) || 0;
+
+function updateLikeButton() {
+  likeButton.textContent =
+    `${liked ? "♥ Liked" : "♡ Like"} · ${likeCount}`;
+}
+
+updateLikeButton();
 
 likeButton.addEventListener("click", async () => {
   likeButton.disabled = true;
@@ -106,7 +115,12 @@ likeButton.addEventListener("click", async () => {
       method: "POST"
     });
 
-    likeButton.textContent = result.liked ? "♥ Liked" : "♡ Like";
+    if (result.liked !== liked) {
+      likeCount += result.liked ? 1 : -1;
+    }
+
+    liked = result.liked;
+    updateLikeButton();
   } catch (e) {
     alert(e.message);
   } finally {
@@ -115,9 +129,9 @@ likeButton.addEventListener("click", async () => {
 });
 
 info.append(title, by, likeButton);
-  card.append(video, debug, info);
+card.append(video, debug, info);
 
-  return card;
+return card;
 }
 async function loadVideos(target){target.innerHTML="";try{const data=await api("/api/videos");if(!data.videos.length){target.innerHTML='<div class="empty"><div class="empty-icon">▶</div><h3>No videos yet</h3><p>Be the first to share a video.</p></div>';return;}data.videos.forEach(v=>target.append(videoCard(v)));}catch(e){target.innerHTML=`<div class="empty">${e.message}</div>`;}}
 $("#uploadForm").addEventListener("submit",async e=>{e.preventDefault();const form=e.currentTarget;const button=form.querySelector("button");button.disabled=true;$("#uploadMessage").textContent="Uploading…";try{const data=await api("/api/videos",{method:"POST",body:new FormData(form)});$("#uploadMessage").textContent="Video uploaded successfully.";form.reset();showView("home");await loadVideos($("#videoFeed"));}catch(err){$("#uploadMessage").textContent=err.message;}finally{button.disabled=false;}});
