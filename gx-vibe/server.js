@@ -112,6 +112,29 @@ async function optionalAuth(req, res, next) {
     return res.status(401).json({ error: "Please sign in again." });
   }
 }
+async function optionalAuth(req, res, next) {
+  try {
+    const token = req.cookies.gxv_session;
+
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+
+    const payload = jwt.verify(token, secret);
+
+    const result = await pool.query(
+      "SELECT id, username, display_name FROM users WHERE id=$1",
+      [payload.sub]
+    );
+
+    req.user = result.rowCount ? result.rows[0] : null;
+    next();
+  } catch {
+    req.user = null;
+    next();
+  }
+}
 function cleanText(value, max) {
   return String(value || "").trim().slice(0, max);
 }
