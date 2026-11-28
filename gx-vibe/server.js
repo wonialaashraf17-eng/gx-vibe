@@ -76,6 +76,29 @@ function setAuthCookie(res, token) {
 }
 async function auth(req, res, next) {
   try {
+async function optionalAuth(req, res, next) {
+  try {
+    const token = req.cookies.gxv_session;
+
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+
+    const payload = jwt.verify(token, secret);
+
+    const result = await pool.query(
+      "SELECT id, username, display_name FROM users WHERE id=$1",
+      [payload.sub]
+    );
+
+    req.user = result.rowCount ? result.rows[0] : null;
+    next();
+  } catch {
+    req.user = null;
+    next();
+  }
+}
     const token = req.cookies.gxv_session;
     if (!token) return res.status(401).json({ error: "Please sign in." });
     const payload = jwt.verify(token, secret);
@@ -159,7 +182,7 @@ app.post("/api/auth/logout", (_req, res) => {
 });
 app.get("/api/me", auth, (req, res) => res.json({ user: req.user }));
 
-app.get("/api/videos", async (req, res) => {
+app.get("/api/videos", optionalAuth, async (req, res) => {
   try {
     const limit = Math.min(30, Math.max(1, Number(req.query.limit) || 20));
 
