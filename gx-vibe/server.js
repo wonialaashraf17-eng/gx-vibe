@@ -127,6 +127,15 @@ async function optionalAuth(req, res, next) {
     next();
   }
 }
+function requireAdmin(req, res, next) {
+  if (!req.user || req.user.is_admin !== true) {
+    return res.status(403).json({
+      error: "Administrator access required."
+    });
+  }
+
+  next();
+}
     const token = req.cookies.gxv_session;
     if (!token) return res.status(401).json({ error: "Please sign in." });
     const payload = jwt.verify(token, secret);
